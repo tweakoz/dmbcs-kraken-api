@@ -1,0 +1,759 @@
+\input texinfo   @c -*-texinfo-*-
+@c %**start of header
+@setfilename dmbcs-kraken-api.info
+@settitle Kraken API
+@documentencoding utf-8
+@c %**end of header
+@copying
+DMBCS Kraken API
+
+Copyright @copyright{} 2018  DM Bespoke Computer Solutions Ltd
+
+@quotation
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, no Front-Cover Texts, and no Back-Cover Texts.  A
+copy of the license is included in the section entitled ``GNU Free
+Documentation License''.
+
+A copy of the license is also available from the Free Software
+Foundation Web site at @url{http://www.gnu.org/licenses/fdl.html}.
+
+@end quotation
+@end copying
+
+@titlepage
+@title DMBCS Kraken API 1.0
+@author Dale Mellor
+@page
+@vskip 0pt plus 1filll
+@insertcopying
+@end titlepage
+
+@ifnottex
+@node Top, Introduction, (dir), (dir)
+@top DMBCS Kraken API 1.0
+
+@insertcopying
+@end ifnottex
+
+@c Generate the nodes for this menu with `C-c C-u C-m'.
+@menu
+* Introduction::
+* Installation of the library::
+* Use example::
+* Detailed reference::
+* Copying This Manual::
+* Function index::
+* Index::
+@end menu
+
+@c Update all node entries with `C-c C-u C-n'.
+@c Insert new nodes with `C-c C-c n'.
+
+@contents
+
+@node Introduction, Installation of the library, Top, Top
+@chapter Introduction
+@section Kraken
+
+@cindex Kraken
+@cindex Kraken web site
+@cindex Web site, Kraken
+Kraken is a virtual currency exchange, which also handles fiat (real)
+currency amounts.  Subscribers to the service have an account with
+associated funds attached.  The web site (www.kraken.com) provides the
+user with an account overview (i.e. current balance), currency-pair
+exchange market status (history of prices and current order book), and
+the means to place entries on the order book; bids for a currency which
+can be immediately met with orders to sell the currency are
+automatically transacted, with the Kraken site taking a small and
+variable cut of the deal, the cut decreasing with intensifying trading
+activity.
+
+@cindex Kraken API
+@cindex API, Kraken
+@cindex Protocol specification
+Kraken also provide a stateless, web-based API by which all of the above
+actions can be undertaken programmatically.  This is fully open, and
+described at @uref{www.kraken.org/help/api}.  The description is almost,
+but not quite, enough to fully specify the interaction protocol.  Kraken
+also provide pointers to implementations of client-side API libraries in
+various languages, and reference to these must be made in order to fully
+understand the working of the Kraken API (the official reference
+implementation is written in PHP).
+
+@section Client-side implementations
+
+@cindex client-side libraries
+@cindex existing C library
+@cindex existing C++ library
+@cindex JSON
+Kraken provide pointers to two proven client library implementations
+that we are immediately interested in: a C implementation and a C++ one.
+Unfortunately the C++ implementation only provides the thinnest veneer
+around TCP sockets, requiring the application programmer to have
+knowledge of the low-level protocol in order to be able to compose
+correct strings which implement the protocol, which defeats the purpose
+somewhat.  The C library is more comprehensive, shadowing all the
+functions exposed by Krakenʼs API as C functions, although they return
+ASCII strings holding data in JSON format which needs further processing
+(we actually take this approach ourself; there are plenty of good JSON
+libraries available, and in many cases it will be most expedient to
+simply send the JSON strings to a web browser and let a Javascript
+program there perform the required onwards analysis).
+
+The main purpose of the DMBCS implementation is to get the best of both
+worlds: to have the API-completeness of the C implementation and the
+resource-management and detail-hiding convenience and safety promised by
+the above C++ implementation, so that the user does not need to
+understand anything of the protocol themself@footnote{This is not
+100% true: when specifying currency pairs the user has to produce
+the correct ASCII string, e.g. ``ZUSDXXBT'' for the US Dollar/Bitcoin
+order book.  We have taken this decision because it would be cumbersome
+to encapsulate all the different currencies, which in any case tend to
+change from time to time, especially as new crypto-currencies become
+available.}.
+
+@section ‘DMBCS’?
+
+@cindex DMBCS namespace
+@cindex DMBCS discriminator
+This isnʼt a vanity or promotional project with any kind of commercial
+restriction, it is something that was needed and is being shared so that
+others can benefit from the effort that has been spent on the
+development, and hopefully improve upon it.
+
+@cindex GNU license
+It is apparent from the above that many libraries exist to interact with
+the Kraken facility, and we would not want to preclude the use of any of
+them by the installation and use of our own.  We also need a way to
+refer to our own implementation specifically.  So we use ‘DMBCS’ to
+provide our distinguishing label: this is appended to the front of the
+package name, and all of the C++ code comes inside a namespace with this
+label.  These should be considered to be five random letters: okay, they
+are abbreviated from DM Bespoke Computer Solutions Ltd, the original
+authorʼs company, but the project is released as fully free, open source
+software (FOSS) which falls under the GNU GPLv3 license, so you should
+treat it as any other component in your free, open operating system
+(@emph{Please} donʼt tell me you actually pay money for some inferior OS
+beyond the eyes of humble scrutineers).
+
+@section Handling JSON returns
+
+@cindex JSON
+Returns are JSON strings.
+
+@cindex rapidjson
+We could have developed the library to the extent that these are fully
+broken out into @code{struct}s, but we had no immediate need for this
+and think that it is actually easier to just use @code{rapidjson} which
+effectively provides the same thing without imposing processing overhead
+when it is not needed; a future version of this library may come with
+the requisite aparatus.
+
+@cindex ECMAScript
+@cindex JavaScript
+@cindex rapidjson
+@cindex JSON
+For now, either send the return strings to a web browser to be handled
+directly by ECMAScript (JavaScript), or, if it is required to handle
+them locally then we find that @code{rapidjson}
+(@uref{https://github.com/Tencent/rapidjson}) is recommendable, though
+there are plenty of other open-source JSON parsers out there.
+
+@node Installation of the library, Use example, Introduction, Top
+@chapter Installation of the library
+
+@cindex GIT
+@cindex code repository
+You will require the @code{git} code management system.  At the
+terminal, type @code{git clone https://rdmp.org/dmbcs/kraken-api.git
+dmbcs-kraken-api}, and then you will have a newly created directory
+called @code{dmbcs-kraken-api} which contains the full source code for
+the program.  Type @code{cd dmbcs-kraken-api} to enter that directory.
+
+@cindex autotools
+@cindex autoconf
+@cindex automake
+@cindex libtool
+@cindex pkg-config
+The libraryʼs build configuration system is GNUʼs @code{autotools}.  You
+will need @code{autoconf}, @code{automake}, and @code{libtool}, and
+@code{pkg-config}.  At the terminal, type @code{autoreconf --install;
+./configure}.
+
+@cindex openssl
+@cindex curl
+@cindex curlpp
+You may at this point see errors relating to lack of openssl, curl,
+curlpp packages.  You must address these issues in your operating system
+and perform a successful @code{./configure} before you can proceed with
+the dmbcs-kraken-api build.
+
+@cindex make
+@cindex non-privileged install
+The libraryʼs build is undertaken by GNU make.  You will need the
+@code{make} package on your system (GNU make is probably not necessary,
+any modern incarnation of make will most likely suffice).  Type
+@code{make && sudo make install} to build and install the library in
+your system.  Note that the sudo command will require that you have
+sufficient privilege on your system, and you may have to type in your
+system password (for a local build not requiring such privilege, in a
+pinch, do @code{./configure --prefix=install-here && make install}).
+
+That should be it.  Try making and running the example program described
+below (Section 3).
+
+@node Use example, Detailed reference, Installation of the library, Top
+@chapter Use example
+
+To get a summary of the current state of the market in Bitcoin—Dollar
+exchanges, write the following C++ code
+
+@cindex @sortas{H} ``hello, world'' example
+@example
+#include <dmbcs-kraken-api.h>
+#include <iostream>
+
+int main ()
+@{
+    auto  K  =  DMBCS::Kraken_API  @{"<your-key>", "<your-secret>"@};
+    std::cout << K.ticker_info ("XXBTZUSD");
+    return 0;
+@}
+@end example
+
+@cindex Kraken keys
+@cindex Kraken secret
+Here, @code{<your-key>} and @code{<your-secret>} are strings which you
+get from your Kraken account management page (do @emph{EVERYTHING} in
+your power to make sure nobody else sees these).  Strictly speaking,
+they are not necessary for the above example, but do allow you to make
+calls on the @code{K} object which interrogate and manipulate your own
+funds.
+
+@cindex application compilation
+@cindex compilation
+If this code is stored in a file called @code{a.cc}, compile it with a
+line like (this should be typed all on one line, without the back-slash)
+@example
+g++ -std=c++17 $( pkg-config --cflags --libs dmbcs-kraken-api) \
+   a.cc -o kraken-api
+@end example
+and then you will have an executable file called @code{kraken-api}.  Run
+this and observe the result in your terminal (you should see a string
+containing JSON-formatted data).
+
+If this doesnʼt work for you, you either havenʼt installed
+dmbcs-kraken-api properly yet (see instructions in Section 2 above),
+or you need to improve your operating system, or get a better one;
+this is as far as we hand-hold you here.
+
+@node Detailed reference, Copying This Manual, Use example, Top
+@chapter Detailed reference
+
+@cindex libcurlpp initialization
+An important point of note.  Any code base which includes the
+@code{dmbcs-kraken-api.h} header file anywhere will have the
+@code{libcurlpp} library automatically initialized during start-up and
+finalized on termination of the application.  If you are using
+@code{libcurlpp} for your own endeavours, you will have to take care to
+ensure that start-up and shut-down happen in ways which are compatible
+with your own code.
+
+@cindex library initialization
+Note that the @code{dmbcs-kraken-api} library itself requires no
+explicit global initialization or finalization.
+
+@cindex thread safety
+The library is not thread safe; there are severe limits to the volume
+and regularity of data transfer through the Kraken API, and, given the
+turn-around times of the accesses, access to the library should be
+considered a strictly serial activity for which parallelism has no
+purpose.  If, however, delayed blocking behaviour is unsatisfactory for
+your application and you need to realize asynchronous communications
+channels with the Exchange, running the @code{dmbcs-kraken-api} entirely
+in a thread separate from the main one would be appropriate.
+
+@section The DMBCS::Kraken_API object
+
+@cindex DMBCS::Kraken_API C++ object
+@cindex object constructor
+The library provides one single object called @code{DMBCS::Kraken_API}.
+This has a single initializing constructor@footnote{Plus a natural move
+constructor, and nothing else: as per the parallelization discussion
+above, it makes no sense to be able to make copies of the
+@code{Kraken_API} object as the whole protocol only allows one operation
+at a time to be in progress.}, and then has one method for each function
+Kraken expose in their API.  Each of these functions returns the result
+as a string conveying data in JSON format, which may include an error
+code and message.
+
+@cindex official Kraken documentation
+It would be folly to describe in detail the Kraken API itself here; we
+content ourselves with describing our functionsʼ detailed call
+signatures and trusting the user to be able to find detailed notes on
+Krakenʼs web site, @uref{https://www.kraken.com/help/api}.
+
+@subsection Construction
+
+@cindex object construction
+@findex Kraken_API::Kraken_API
+DMBCS::Kraken_API::Kraken_API (std::string const &key, std::string const
+&secret)
+
+This is the only way to create an initial API-wrapping object.  The
+@code{key} and @code{secret} must be obtained from the account
+management page at the Kraken web site (strictly speaking, they do not
+need to be valid for general exchange-state inquiries, only for personal
+account introspection and trading).
+
+Example use:
+
+@example
+  auto  K  =  DMBCS::Kraken_API @{"my-key", "my-secret"@};
+@end example
+
+provides an object @code{K} which is subsequently used to access the
+Kraken exchange, as per the further examples below.
+
+@subsection Options
+
+@cindex options
+@findex set_opt
+template <typename T>   void  DMBCS::Kraken_API::set_opt  (Option const &opt,
+                                                           T const &val)
+
+Many of the Kraken API functions allow for the specification of optional
+filters to control the amount and nature of information returned.  These
+are specified in the DMBCS library through the set_opt template method.
+The option selection is done through constants provided in
+@code{Kraken_API}: choose one of
+
+@cindex options list
+@cindex list of options
+@example
+        INFO, ACLASS, ASSET, TRADES, USERREF, START, END, OFS, CLOSE_TIME,
+        DO_CALCS, PAIR, FEE_INFO, OFLAGS, START_TIME, EXPIRE_TIME, VALIDATE,
+        LEVERAGE, TYPE, CLOSE_TYPE, CLOSE_PRICE_1, CLOSE_PRICE_2, INTERVAL,
+        SINCE, COUNT
+@end example
+
+It is up to your application to provide an appropriate value for each
+option — this is one of the corners where the @code{Kraken_API} does not
+completely encapsulate the underlying protocol.
+
+If it is necessary to subsequently unset an option, then a method
+
+@findex clear_opt
+void  DMBCS::Kraken_API::clear_opt  (Option const  &opt)
+
+is available.
+
+See the description of the @code{asset_info} method in Section
+@xref{asset_info} below for an example of how to use these functions.
+
+@subsection Public functions: global state of the exchange
+
+As mentioned above, these functions donʼt strictly need the userʼs key
+and secret strings.  They provide non-confidential information about the
+state of the whole exchange, rather than the state of a userʼs account
+with the exchange.
+
+@subsubsection server_time
+
+@findex server_time
+std::string DMBCS::Kraken_API::server_time ()
+
+This will return the current time as understood by the Kraken service.
+
+Example:
+@example
+  std::cout  <<  K.server_time ();
+@end example
+prints something like
+@example
+@{"error":[],"result":@{"unixtime":1525292746,"rfc1123":"Wed,  2 May 18
+20:25:46 +0000"@}@}
+@end example
+on the terminal.
+
+@subsubsection asset_info
+@anchor{asset_info}
+@findex asset_info
+std::string DMBCS::Kraken_API::asset_info ()
+
+This will return meta-information about a set of assets.  The options
+@code{INFO}, @code{ACLASS} and @code{ASSET} influence the return from
+this function.
+
+Example:
+@example
+  K.set_opt  (K.ASSET,  "XBTC");
+  std::cout  <<  K.asset_info ();
+@end example
+will print something like
+@example
+@{"error":[],"result":@{"XXBT":@{"aclass":"currency","altname":"XBT","decima
+ls":10,"display_decimals":5@}@}@}
+@end example
+on the terminal.  Note that it has corrected the spelling from ``XBTC''!
+
+@subsubsection asset_pairs
+@findex asset_pairs
+
+std::string DMBCS::Kraken_API::asset_pairs ()
+
+This function returns a list of pairs of asset types which may be traded
+for each other on the exchange, along with meta-data describing the
+exchange process.
+
+The options @code{INFO} and @code{PAIR} will affect the value returned
+from this function.
+
+For example,
+
+@example
+  K.set_opt  (K.PAIR, "XXBTZUSD");
+  std::cout  <<  K.asset_pairs ();
+@end example
+
+will print something like
+
+@example
+@{"error":[],"result":@{"XXBTZUSD":@{"altname":"XBTUSD","aclass_base":"curre
+ncy","base":"XXBT","aclass_quote":"currency","quote":"ZUSD","lot":"unit","pa
+ir_decimals":1,"lot_decimals":8,"lot_multiplier":1,"leverage_buy":[2,3,4,5],
+"leverage_sell":[2,3,4,5],"fees":[[0,0.26],[50000,0.24],[100000,0.22],[25000
+0,0.2],[500000,0.18],[1000000,0.16],[2500000,0.14],[5000000,0.12],[10000000,
+0.1]],"fees_maker":[[0,0.16],[50000,0.14],[100000,0.12],[250000,0.1],[500000
+,0.08],[1000000,0.06],[2500000,0.04],[5000000,0.02],[10000000,0]],"fee_volum
+e_currency":"ZUSD","margin_call":80,"margin_stop":40@}@}@}
+@end example
+
+on the command line.
+
+@subsubsection ticker_info
+@findex ticker_info
+
+std::string DMBCS::Kraken_API::ticker_info (std::string const &pair)
+
+Provide up to date information about the state of the market in a
+trading pair.
+
+@example
+  std::cout << K.ticker_info ("XXBTZUSD");
+@end example
+
+will produce something like
+
+@example
+@{"error":[],"result":@{"XXBTZUSD":@{"a":["7616.30000","1","1.000"],"b":["7
+610.10000","3","3.000"],"c":["7616.30000","0.00840000"],"v":["941.52501200"
+,"2032.58702329"],"p":["7638.63864","7661.37306"],"t":[3099,6798],"l":["759
+6.00000","7596.00000"],"h":["7700.00000","7728.90000"],"o":"7679.40000"@}@}@}
+@end example
+
+on the command line.  Briefly, the components of the @code{result} are:
+ask, bid, close, volume, weighted-volume, trades, low, high, and open,
+wherein the interval-dependent quantities refer to the last 24 hours.
+
+@subsubsection ohlc_data
+@findex ohlc_data
+@cindex open-high-low-close, ohlc
+@cindex ohlc, open-high-low-close
+
+std::string DMBCS::Kraken_API::ohlc_data (std::string const &pair)
+
+The abbreviation ``ohlc'' stands for ``open, high, low, close,'' and
+this function will return a history of these values for a given
+interval.
+
+The @code{pair} argument should specify a trading pair, such as
+@code{"XXBTZUSD"} for Bitcoin—Dollar trading.
+
+The function is affected by the @code{INTERVAL} and @code{SINCE}
+options.
+
+@subsubsection order_book
+@findex order_book
+@cindex exchange prices
+@cindex trading pair code
+
+std::string DMBCS::Kraken_API::order_book (std::string const &pair)
+
+This function returns live details of current bidding and asking prices
+and the volumes being offered.
+
+The @code{pair} argument should specify a trading pair code, such as
+@code{"XXBTZUSD"}.
+
+The function is affected by the @code{COUNT} option.
+
+@subsubsection recent_trades
+@findex recent_trades
+
+std::string DMBCS::Kraken_API::recent_trades (std::string const &pair)
+
+This function returns an up to date list of all recently concluded
+trades.
+
+The @code{pair} argument should indicate a trading pair, such as
+@code{"XXBTZUSD"}.
+
+The function is affected by the @code{SINCE} option.
+
+@subsubsection spread_data
+@findex spread_data
+
+std::string DMBCS::Kraken_API::spread_data (std::string const &pair)
+
+This function returns a history of instantaneous highest bid and lowest
+offer values for this trading pair on the exchange.
+
+The @code{pair} argument should indicate a trading pair, such as
+@code{"XXBTZUSD"}.
+
+The function is affected by the @code{SINCE} option.
+
+@subsection Private inquiry functions
+@cindex private functions
+@cindex userʼs account
+
+These functions are for inquiring into the current state of the userʼs
+account.
+
+@subsubsection account_balance
+@findex account_balance
+
+std::string account_balance ()
+
+This function returns a list of currencies and the amount of each Kraken
+is holding for you on account.
+
+@subsubsection trade_balance
+@findex trade_balance
+
+std::string trade_balance ()
+
+This function provides a snapshot of your current trading activities,
+expressing your current balance in terms of potential value in a given
+currency.
+
+The currency may be set with the @code{ASSET} option.  The @code{ACLASS}
+option is also available, and may have some use in a future version of
+Krakenʼs API.
+
+@subsubsection open_orders
+@findex open_orders
+@cindex order close-out
+
+std::string open_orders ()
+
+This function provides a very detailed description of the current state
+of all of your open orders, including the amount of fulfilment that has
+been completed and the conduct of on-going actions, such as close-out.
+
+The function is affected by the @code{TRADES} and @code{USERREF} options.
+
+@subsubsection closed_orders
+@findex closed_orders
+
+std::string closed_orders ()
+
+Similarly to the @code{open_orders} function above, this function
+provides detailed information of your closed orders.  Note that a
+maximum of 50 records will be returned by this function; use the
+@code{OFS} option in repeat calls to get information on more items.
+
+The options which affect this function are: @code{TRADES},
+@code{USERREF}, @code{START}, @code{END}, @code{OFS} and
+@code{CLOSETIME}.
+
+@subsubsection query_orders
+@findex query_orders
+@cindex transaction ID
+
+std::string query_orders (std::string const &txid)
+
+As the above two functions, but returns data specifically about a given
+set of orders, identified by their transaction ID.  The @code{txid}
+argument is a string containing a comma-separated list of transaction
+IDs.
+
+The function is affected by the @code{TRADES} and @code{USERREF}
+options.
+
+@subsubsection trades_history
+@findex trades_history
+@cindex listing limits
+@cindex offset, listing
+
+std::string trades_history ()
+
+This returns very detailed information about your trading history.  A
+maximum of 50 records will be returned; use the @code{OFS} option in
+repeat calls to get more information.
+
+Other options which affect the outcome from this function are:
+@code{TYPE}, @code{TRADES}, @code{START}, and @code{END}.
+
+@subsubsection trades_info
+@findex trades_info
+
+std::string trades_info (std::string const &txid)
+
+Gets detailed information, as the method above, for a very specific set
+of trades you have completed in the past.  The @code{txid} argument is a
+string containing a comma-separated list of transaction IDs.
+
+This function is affected by the @code{TRADES} option, which causes more
+information to be returned (the value given to the option is irrelevant).
+
+@subsubsection open_positions
+@findex open_positions
+
+std::string open_positions (std::string const &txid)
+
+Get detailed information on specific open positions, optionally with
+calculation of expected profit/loss given the current conditions of the
+exchange.  The @code{txid} argument is a string containing a
+comma-separated list of transaction IDs.
+
+This function is affected by the @code{DOCALCS} option (the actual value
+of this option is irrelevant).
+
+@subsubsection ledgers_info
+@findex ledgers_info
+
+std::string ledgers_info ()
+
+This is the method which allows you to get the definitive history (e.g.,
+for tax purposes), of your activities on the Kraken exchange, including
+exact fees which have been charged to your account.  The method will
+only return 50 items at a time, so you will likely need to make multiple
+requests with different @code{START}, @code{END} and/or @code{OFS}
+option settings to get the full record.
+
+The list of options which affect this function are: @code{ACLASS},
+@code{ASSET}, @code{TYPE}, @code{START}, @code{END} and @code{OFS}.
+
+@subsubsection query_ledgers
+@findex query_ledgers
+
+std::string query_ledgers (std::string const &id)
+
+As above, but return information about a specific set of ledger
+entries.  The @code{id} argument is a string containing a
+comma-separated list of ledger item IDs.
+
+@subsubsection trade_volume
+@findex trade_volume
+
+std::string trade_volume ()
+
+This function returns information about actual and potential costs of
+trading based on the userʼs recent trading volume.
+
+The function is affected by the @code{PAIR} and @code{FEE_INFO} options.
+
+@subsection Trading functions
+@cindex trading functions
+
+The final two functions in the Kraken API are for actively submitting
+order instructions to the Kraken exchange.  Use these with extreme care,
+especially during the development phase of your application; it is too
+easy to accidentally lose a lot of money!
+
+@subsubsection add_order
+@findex add_order
+
+std::string  DMBCS::Kraken_API::add_order (Order_Instruction const
+&instruction, Order_Type const &order, std::string const &asset,
+std::string const &volume, ...)
+
+@cindex Kraken engine
+This is the single method available for adding an instruction to the
+Kraken engine to execute a trade order on your behalf.
+
+@cindex trading instructions
+The available instructions are: @code{DMBCS::Kraken_API::BUY} and
+@code{DMBCS::Kraken_API::SELL}.
+
+@cindex order types
+The available order types, again in the @code{DMBCS::Kraken_API}
+namespace but shown without for brevity, are: @code{MARKET},
+@code{LIMIT}, @code{STOP_LOSS}, @code{TAKE_PROFIT},
+@code{STOP_LOSS_PROFIT}, @code{STOP_LOSS_PROFIT_LIMIT},
+@code{STOP_LOSS_LIMIT}, @code{TAKE_PROFIT_LIMIT}, @code{TRAILING_STOP},
+@code{TRAILING_STOP_LIMIT}, @code{STOP_LOSS_AND_LIMIT},
+@code{SETTLE_POSITION}.
+
+@cindex asset
+@cindex asset type
+The @code{asset} argument must indicate the asset pair to trade.  For
+example, to buy Bitcoin for Dollars the asset should be
+@code{"XXBTZUSD"}.
+
+The @code{volume} argument must be the amount of the asset you are
+buying or selling.
+
+If your order type is one of LIMIT, STOP_LOSS, TAKE_PROFIT, or
+TRAILING_STOP, then you must supply an extra argument which gives the
+@emph{price} at which the action takes place.  If your order type is one
+of STOP_LOSS_PROFIT, STOP_LOSS_PROFIT_LIMIT, STOP_LOSS_LIMIT,
+TAKE_PROFIT_LIMIT, TRAILING_STOP_LIMIT, STOP_LOSS_AND_LIMIT, then you
+must supply @emph{two} extra arguments to the method: a @emph{price_1}
+and a @emph{price_2} which give the limits at which primary and
+secondary actions take place.
+
+Note that all the ‘numerical’ arguments are in fact strings.  These are
+sent to the Kraken exchange as-is, and thus must be in a form that can
+be parsed into bona-fide numbers.  It is done this way to guarantee no
+loss of precision due to such things as numerical rounding or truncating
+a floating-point value to an integer.
+
+Further to the somewhat complicated arrangement of compulsory arguments
+given above, the method is influenced by the following options:
+@code{LEVERAGE}, @code{OFLAGS}, @code{START_TIME}, @code{EXPIRE_TIME},
+@code{USERREF}, @code{VALIDATE}, @code{CLOSE_TYPE},
+@code{CLOSE_PRICE_1}, and @code{CLOSE_PRICE_2}.
+
+Please be very careful when composing complicated esoteric options: the
+Kraken engine itself has been known to be somewhat fragile with its
+interpretation of various combinations of options.  Donʼt make any
+assumptions, try things out in the Kraken web interface first, and guard
+against spending any amount of money which means anything to you until
+you are absolutely sure you understand everything.
+
+@subsubsection cancel_order
+@findex cancel_order
+
+std::string DMBCS::Kraken_API::cancel_order (std::string const &txid)
+
+Cancel the order with the given transaction ID (@code{txid}).  Of course
+this only works on the part of an order which has not been fulfilled by
+the time the instruction manages to reach, and is acted upon by, the
+Kraken exchange engine.
+
+@node Copying This Manual, Index, Detailed reference, Top
+@appendix Copying This Manual
+
+@c Get fdl.texi from http://www.gnu.org/licenses/fdl.html
+@include fdl.texi
+
+@node Function index, Index, Copying This Manual, Top
+@unnumbered Function index
+
+@printindex fn
+
+@node Index,  , Copying This Manual, Top
+@unnumbered Index
+
+@printindex cp
+
+@bye
+
+@c trader-desk.texi ends here
