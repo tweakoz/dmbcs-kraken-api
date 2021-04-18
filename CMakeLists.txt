@@ -17,10 +17,14 @@ target_include_directories (krakenapi PRIVATE /usr/local/opt/openssl/include )
 
 
 target_include_directories (krakenapi PRIVATE ${SRCD} )
-
 target_include_directories (krakenapi PRIVATE ${OPENSSL_INCLUDE_DIR} )
-target_link_directories (krakenapi PRIVATE /usr/local/lib )
-target_link_directories (krakenapi PRIVATE /usr/local/opt/openssl/lib )
+target_include_directories(krakenapi PRIVATE $ENV{OBT_STAGE}/include )
+
+# mac target_link_directories (krakenapi PRIVATE /usr/local/lib )
+# mac target_link_directories (krakenapi PRIVATE /usr/local/opt/openssl/lib )
+
+target_link_directories(krakenapi PRIVATE $ENV{OBT_STAGE}/lib )
+
 target_link_libraries(krakenapi PRIVATE ssl crypto )
 target_link_libraries(krakenapi PRIVATE curl curlpp )
 
