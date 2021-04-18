@@ -25,3 +25,4 @@ target_link_libraries(krakenapi PRIVATE ssl crypto )
 target_link_libraries(krakenapi PRIVATE curl curlpp )
 
 install(TARGETS krakenapi LIBRARY DESTINATION $ENV{OBT_STAGE}/lib )
+install(FILES ${SRCD}/dmbcs-kraken-api.h DESTINATION $ENV{OBT_STAGE}/include )
